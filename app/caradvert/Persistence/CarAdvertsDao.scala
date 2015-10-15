@@ -1,15 +1,14 @@
 package caradvert.Persistence
 
-import java.sql.{SQLException, ResultSet, Statement, PreparedStatement}
+import java.sql.{PreparedStatement, ResultSet, SQLException, Statement}
 import java.text.SimpleDateFormat
-import java.time.{Instant, LocalDate, ZoneId}
-import java.util.Date
+import java.time.{LocalDate, ZoneId}
 
+import anorm._
 import caradvert.model._
 import com.google.inject.Inject
-import org.joda.time.DateTime
-import play.api.db.DB
 import play.api.Play.current
+import play.api.db.DB
 
 /**
  * Created by Sougata on 10/14/2015.
@@ -102,6 +101,16 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
       )
 
     else throw new IllegalStateException("Unknown car Type " + carType)
+  }
+
+
+ override def carDelete(id: String): Int = {
+    DB.withConnection { implicit c =>
+      val nRowsDeleted = SQL("DELETE FROM CARADVERTS WHERE id = {id}")
+        .on('id -> id)
+        .executeUpdate()
+      nRowsDeleted
+    }
   }
 
   def toLocalDate(s: String): LocalDate =

@@ -51,6 +51,17 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
 
 
 
+  override def listOne(id: String): Option[CarAdvertsModel] = {
+    DB.withConnection { conn =>
+      val listOne: PreparedStatement =
+        conn.prepareStatement("select ID,TITLE,FUEL,PRICE,NEWCAR,MILEAGE,FIRSTRREGISTRATION from CARADVERTS where ID = ?")
+      listOne.setString(1, id)
+      val adverts = returnResultSet(listOne.executeQuery())
+      if (adverts.size == 1) Some(adverts.head)
+      else None
+    }
+  }
+
   override def list(sortBy: String): List[CarAdvertsModel] = {
     assume(sortBy.matches("^[a-zA-Z0-9]*$"), "Invalid sort pattern")
     DB.withConnection { conn =>

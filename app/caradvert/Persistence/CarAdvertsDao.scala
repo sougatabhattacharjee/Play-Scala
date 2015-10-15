@@ -1,16 +1,20 @@
 package caradvert.Persistence
 
 import java.sql.{SQLException, ResultSet, Statement, PreparedStatement}
+import java.text.SimpleDateFormat
+import java.time.{Instant, LocalDate, ZoneId}
+import java.util.Date
 
-import caradvert.model.{CarAdvertsModel, CarAdvertsNew, CarAdvertsUsed}
+import caradvert.model._
 import com.google.inject.Inject
+import org.joda.time.DateTime
 import play.api.db.DB
 import play.api.Play.current
 
 /**
  * Created by Sougata on 10/14/2015.
  */
-class CarAdvertsDao @Inject()() extends CarAdvertsDaoImpl {
+class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatter) extends CarAdvertsDaoImpl {
 
   override def addCar(carAdvertsNew: CarAdvertsNew): CarAdvertsModel = {
     lazy val id = carAdvertsNew.randomUUID
@@ -42,5 +46,54 @@ class CarAdvertsDao @Inject()() extends CarAdvertsDaoImpl {
     }
   }
 
+
   override def addCar(carAdvertsUsed: CarAdvertsUsed): CarAdvertsModel = ???
+
+
+
+  override def list(sortBy: String): List[CarAdvertsModel] = {
+    assume(sortBy.matches("^[a-zA-Z0-9]*$"), "Invalid sort pattern")
+    DB.withConnection { conn =>
+      val list: PreparedStatement =
+        conn.prepareStatement("select ID,TITLE,FUEL,PRICE,NEWCAR,MILEAGE,FIRSTRREGISTRATION from CARADVERTS order by " + sortBy)
+
+      val resultSet = list.executeQuery()
+
+      returnResultSet(resultSet)
+    }
+  }
+  private def returnResultSet(resultSet: ResultSet): List[CarAdvertsModel] =
+    if (!resultSet.next()) List()
+    else createOneRow(resultSet)::returnResultSet(resultSet)
+
+
+  private def createOneRow(resultSet: ResultSet): CarAdvertsModel = {
+    val carType: Int = resultSet.getInt("NEWCAR")
+
+    if (carType == 1)
+      CarAdvertsNew(
+        resultSet.getString("ID"),
+        resultSet.getString("TITLE"),
+        carAdvertsModelFormatter.fuelFrom(resultSet.getString("FUEL")),
+        resultSet.getInt("PRICE"),
+        true
+      )
+
+    else if (carType == 0)
+      CarAdvertsUsed(
+        resultSet.getString("ID"),
+        resultSet.getString("TITLE"),
+        carAdvertsModelFormatter.fuelFrom(resultSet.getString("FUEL")),
+        resultSet.getInt("PRICE"),
+        false,
+        resultSet.getInt("MILEAGE"),
+        toLocalDate(resultSet.getString("FIRSTRREGISTRATION"))
+      )
+
+    else throw new IllegalStateException("Unknown car Type " + carType)
+  }
+
+  def toLocalDate(s: String): LocalDate =
+    new SimpleDateFormat("yyyy-MM-dd").parse(s).toInstant().atZone(ZoneId.systemDefault()).toLocalDate;
+
 }

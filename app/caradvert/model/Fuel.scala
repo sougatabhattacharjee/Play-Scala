@@ -8,3 +8,4 @@ abstract class Fuel
 case object Diesel extends Fuel
 case object Gasoline extends Fuel
 
+

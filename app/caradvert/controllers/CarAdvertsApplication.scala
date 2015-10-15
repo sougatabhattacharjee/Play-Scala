@@ -1,25 +1,31 @@
 package caradvert.controllers
 
-import caradvert.Persistence.CarAdvertsDaoImpl
-import com.google.inject.Inject
+import javax.inject.Inject
+
+import caradvert.Persistence.{CarAdvertsDao, CarAdvertsDaoImpl}
+import caradvert.model.{CarAdvertsModel, CarAdvertsModelFormatter}
 import play.Logger
-import play.api.libs.json.{JsSuccess, JsError}
-import play.api.mvc._
-import play.libs.Json
-import caradvert.model.{CarAdvertsModelFormatter, CarAdvertsModel}
-import play.api.Play.current
+import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.mvc.{Action, Controller}
 
-
-class CarAdvertsApplication @Inject()(carAdvertsDaoImpl: CarAdvertsDaoImpl)
+class CarAdvertsApplication @Inject()(carAdvertsDaoImpl: CarAdvertsDaoImpl)(carAdvertsDao: CarAdvertsDao)
                                      (implicit carAdvertsModelFormatter: CarAdvertsModelFormatter) extends Controller {
 
   def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+    Ok("Your new Car Adverts App is ready.")
   }
 
-  def list = TODO
+  //retrieve all cars with default sorting by id
+  def list() = Action { request =>
+    Ok(Json.toJson(carAdvertsDaoImpl.list(request.getQueryString("sortedBy"))))
+  }
 
-  def listone(id: Int) = TODO
+  def listOne(id: String) = Action {
+    carAdvertsDaoImpl.listOne(id) match {
+      case Some(advert) => Ok(Json.toJson(advert))
+      case None => NotFound("No Car Found!")
+    }
+  }
 
   def add = Action(parse.json) { request =>
     request.body.validate[CarAdvertsModel] match {
@@ -31,8 +37,16 @@ class CarAdvertsApplication @Inject()(carAdvertsDaoImpl: CarAdvertsDaoImpl)
     }
   }
 
-  def modify(id: Int) = TODO
+  def delete(id: String) = Action {
+    carAdvertsDaoImpl.carDelete(id) match {
+      case 1 =>
+        Logger.info("Deleted Car :" + id)
+        carAdvertsDaoImpl.carDelete(id)
+        Ok("Deleted Car :" + id)
+      case 0 => NotFound("No Car Found!")
+    }
+  }
 
-  def delete(id: Int) = TODO
+  def modify(id: Int) = TODO
 
 }

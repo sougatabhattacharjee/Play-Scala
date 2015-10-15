@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+GET     /                           caradvert.controllers.CarAdvertsApplication.index
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
@@ -11,11 +11,16 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 # Car adverts actions
 
-GET /caradv         caradvert.controllers.CarAdvertsApplication.list             # to retrieve all the cars
-GET /caradv/:id     caradvert.controllers.CarAdvertsApplication.list(id: Int)    # to retrieve a specific car by id
-POST /caradv        caradvert.controllers.CarAdvertsApplication.add              # to add a car
-PUT /caradv/:id     caradvert.controllers.CarAdvertsApplication.modify(id: Int)  # using PUT as we are modifying an existing car
-DELETE /caradv/:id  caradvert.controllers.CarAdvertsApplication.delete(id: Int)  # delete a car
+GET /caradv         caradvert.controllers.CarAdvertsApplication.list
+# to retrieve all the cars
+GET /caradv/:id     caradvert.controllers.CarAdvertsApplication.listOne(id: String)
+# to retrieve a specific car by id
+POST /caradv        caradvert.controllers.CarAdvertsApplication.add
+# to add a car
+PUT /caradv/:id     caradvert.controllers.CarAdvertsApplication.modify(id: Int)
+# using PUT as we are modifying an existing car
+DELETE /caradv/:id  caradvert.controllers.CarAdvertsApplication.delete(id: String)
+# delete a car
 
 
     

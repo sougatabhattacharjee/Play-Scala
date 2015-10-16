@@ -1,8 +1,10 @@
 package caradvert.Persistence
 
-import java.sql.{PreparedStatement, ResultSet, SQLException, Statement}
+import java.sql._
 import java.text.SimpleDateFormat
 import java.time.{LocalDate, ZoneId}
+import java.util
+import java.util.Calendar
 
 import anorm._
 import caradvert.model._
@@ -25,28 +27,45 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
       insert.setString(2, carAdvertsNew.title)
       insert.setString(3, carAdvertsNew.fuel.toString())
       insert.setInt(4, carAdvertsNew.price)
-      insert.setInt(5, 1)
+      insert.setInt(5, 1) ///new car
       insert
-    }
+    },
+    id
     )
   }
 
   private def withAdvertCreation(carAdvertsModel: CarAdvertsModel,
                                  addSql: String,
-                                 paramsSetter: PreparedStatement => PreparedStatement): CarAdvertsModel = {
+                                 paramsSetter: PreparedStatement => PreparedStatement, id: String): CarAdvertsModel = {
     DB.withConnection { conn =>
       val insert: PreparedStatement =
         paramsSetter(conn.prepareStatement(addSql, Statement.RETURN_GENERATED_KEYS))
       val affectedRows: Int = insert.executeUpdate()
       val generatedKeys: ResultSet = insert.getGeneratedKeys()
-      if (affectedRows == 0) throw new SQLException("Adding car advert failed: no rows affected!")
-      else if (!generatedKeys.next()) throw new SQLException("Adding car advert failed: no id returned!")
-      else return carAdvertsModel.withId(generatedKeys.getString(1))
+      if (affectedRows == 0) throw new SQLException("Adding new car failed: no rows affected!")
+      else return carAdvertsModel.withId(id)
     }
   }
 
 
-  override def addCar(carAdvertsUsed: CarAdvertsUsed): CarAdvertsModel = ???
+  override def addCar(carAdvertsUsed: CarAdvertsUsed): CarAdvertsModel = {
+    lazy val id = carAdvertsUsed.randomUUID
+    withAdvertCreation(
+    carAdvertsUsed,
+    "insert into CARADVERTS (ID, TITLE, FUEL, PRICE, NEWCAR,MILEAGE,FIRSTRREGISTRATION) values (?, ?, ?, ?, ?, ?, ?)",
+    { insert: PreparedStatement =>
+      insert.setString(1, id)
+      insert.setString(2, carAdvertsUsed.title)
+      insert.setString(3, carAdvertsUsed.fuel.toString())
+      insert.setInt(4, carAdvertsUsed.price)
+      insert.setInt(5, 0) //used car
+      insert.setInt(6, carAdvertsUsed.getMileage().get)
+      insert.setDate(7, new java.sql.Date(toDate(carAdvertsUsed.getFirstRegistration().get).getTime))
+      insert
+    },
+    id
+    )
+  }
 
 
 
@@ -82,7 +101,7 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
 
     if (carType == 1)
       CarAdvertsNew(
-        resultSet.getString("ID"),
+        Some(resultSet.getString("ID")),
         resultSet.getString("TITLE"),
         carAdvertsModelFormatter.fuelFrom(resultSet.getString("FUEL")),
         resultSet.getInt("PRICE"),
@@ -91,7 +110,7 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
 
     else if (carType == 0)
       CarAdvertsUsed(
-        resultSet.getString("ID"),
+        Some(resultSet.getString("ID")),
         resultSet.getString("TITLE"),
         carAdvertsModelFormatter.fuelFrom(resultSet.getString("FUEL")),
         resultSet.getInt("PRICE"),
@@ -113,7 +132,37 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
     }
   }
 
+  override def modify(carAdvertsModel: CarAdvertsModel): CarAdvertsModel = {
+    DB.withConnection { conn =>
+      val update: PreparedStatement = conn.prepareStatement(
+        "update CARADVERTS set TITLE = ?, FUEL = ?, PRICE = ?, MILEAGE = ?, FIRSTRREGISTRATION = ? where ID = ?"
+      )
+      update.setString(1, carAdvertsModel.getTitle())
+      update.setString(2, carAdvertsModel.getFuel().toString())
+      update.setInt(3, carAdvertsModel.getPrice())
+      carAdvertsModel.getMileage() match {
+        case Some(mileage) => update.setInt(4, mileage)
+        case None => update.setNull(4, Types.INTEGER)
+      }
+      carAdvertsModel.getFirstRegistration() match {
+        case Some(date) => update.setString(5, dateToString())
+        case None => update.setNull(5, Types.DATE)
+      }
+      update.setString(6, carAdvertsModel.getId().get)
+      if (update.executeUpdate() == 0) throw new NoSuchElementException("Update failed!")
+      else return carAdvertsModel
+    }
+  }
+
+  def toDate(localDate: LocalDate): util.Date =
+  new SimpleDateFormat("yyyy-MM-dd").parse(localDate.toString())
+
+  def dateToString(): String =
+  new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()).toString
+  //format.format(Calendar.getInstance().getTime()).toString
+
   def toLocalDate(s: String): LocalDate =
     new SimpleDateFormat("yyyy-MM-dd").parse(s).toInstant().atZone(ZoneId.systemDefault()).toLocalDate;
+
 
 }

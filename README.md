@@ -97,4 +97,4 @@ Request check the existence. If it does not exist then it should return Not Foun
 * Limitation (pagination) getting all adverts. Currently Data is not big, applicable for big amout of data
 * Sort column parameter types, asce or desc
 * Mock tests
-
+* Deploying to Heroku or any other services

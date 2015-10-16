@@ -2,13 +2,13 @@ package caradvert.controllers
 
 import javax.inject.Inject
 
-import caradvert.Persistence.{CarAdvertsDao, CarAdvertsDaoImpl}
+import caradvert.Persistence.CarAdvertsDaoImpl
 import caradvert.model.{CarAdvertsModel, CarAdvertsModelFormatter}
 import play.Logger
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import play.api.mvc.{Action, Controller}
 
-class CarAdvertsApplication @Inject()(carAdvertsDaoImpl: CarAdvertsDaoImpl)(carAdvertsDao: CarAdvertsDao)
+class CarAdvertsApplication @Inject()(carAdvertsDaoImpl: CarAdvertsDaoImpl)
                                      (implicit carAdvertsModelFormatter: CarAdvertsModelFormatter) extends Controller {
 
   def index = Action {
@@ -47,6 +47,14 @@ class CarAdvertsApplication @Inject()(carAdvertsDaoImpl: CarAdvertsDaoImpl)(carA
     }
   }
 
-  def modify(id: Int) = TODO
+  def modify(id: String) = Action(parse.json) { request =>
+    request.body.validate[CarAdvertsModel] match {
+      case (success: JsSuccess[CarAdvertsModel]) =>
+          Logger.info("Car Modifying " + success.get)
+          Ok(Json.toJson(carAdvertsDaoImpl.modify(success.get.withId(id))))
+      case (error: JsError) =>
+        BadRequest(JsError.toJson(error))
+    }
+  }
 
 }

@@ -31,5 +31,7 @@ trait CarAdvertsDaoImpl {
 
   def carDelete(id: String): Int
 
+  def modify(carAdvertsModel: CarAdvertsModel): CarAdvertsModel
+
 
 }

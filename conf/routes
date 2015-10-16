@@ -17,7 +17,7 @@ GET /caradv/:id     caradvert.controllers.CarAdvertsApplication.listOne(id: Stri
 # to retrieve a specific car by id
 POST /caradv        caradvert.controllers.CarAdvertsApplication.add
 # to add a car
-PUT /caradv/:id     caradvert.controllers.CarAdvertsApplication.modify(id: Int)
+PUT /caradv/:id     caradvert.controllers.CarAdvertsApplication.modify(id: String)
 # using PUT as we are modifying an existing car
 DELETE /caradv/:id  caradvert.controllers.CarAdvertsApplication.delete(id: String)
 # delete a car

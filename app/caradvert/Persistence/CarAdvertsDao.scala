@@ -145,7 +145,7 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
         case None => update.setNull(4, Types.INTEGER)
       }
       carAdvertsModel.getFirstRegistration() match {
-        case Some(date) => update.setString(5, dateToString())
+        case Some(date) => update.setDate(5, new java.sql.Date(toDate(carAdvertsModel.getFirstRegistration().get).getTime))
         case None => update.setNull(5, Types.DATE)
       }
       update.setString(6, carAdvertsModel.getId().get)
@@ -157,8 +157,8 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
   def toDate(localDate: LocalDate): util.Date =
   new SimpleDateFormat("yyyy-MM-dd").parse(localDate.toString())
 
-  def dateToString(): String =
-  new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()).toString
+  def dateToCurrentDate(): util.Date =
+  new SimpleDateFormat("yyyy-MM-dd").parse(Calendar.getInstance().getTime().toString)
   //format.format(Calendar.getInstance().getTime()).toString
 
   def toLocalDate(s: String): LocalDate =

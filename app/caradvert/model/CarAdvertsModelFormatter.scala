@@ -40,11 +40,11 @@ class CarAdvertsModelFormatter extends Format[CarAdvertsModel] {
 
 
   private val commonFormatBuilder =
-    (JsPath \ "id").format[String] and
+    (JsPath \ "id").formatNullable[String] and
       (JsPath \ "title").format[String] and
       (JsPath \ "fuel").format[Fuel] and
       (JsPath \ "price").format[Int] and
-      (JsPath \ "newCar").format[Boolean]
+      (JsPath \ "new").format[Boolean]
 
   private val adForNewFormat: Format[CarAdvertsNew] =
     commonFormatBuilder(CarAdvertsNew.apply, unlift(CarAdvertsNew.unapply))
@@ -68,7 +68,22 @@ class CarAdvertsModelFormatter extends Format[CarAdvertsModel] {
   override def reads(json: JsValue): JsResult[CarAdvertsModel] = {
     json match {
       case JsObject(_) => reads(json.as[JsObject])
-      case _ => JsError("Advert must be an object")
+      case _ => JsError("CarAdvertsModel must be an object")
     }
   }
+
+  private def reads(json: JsObject): JsResult[CarAdvertsModel] = {
+    val carType: JsValue = json.fields.find(field => field._1 == "new").getOrElse("new" -> JsNull)._2
+    carType match {
+      case JsNull => jsTypeError("CarType is required, either true or false")
+      case JsBoolean(value) => value match {
+        case true => adForNewFormat.reads(json - "true")
+        case false => adForUsedFormat.reads(json - "false")
+        case _ => jsTypeError("has invalid value either true or false '" + value + "'")
+      }
+      case _ => jsTypeError("Unknown Error")
+    }
+  }
+  private def jsTypeError(concreteError: String): JsError =
+    JsError("'new' " + concreteError + ". Must be either false or true")
 }

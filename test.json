@@ -1,0 +1,9 @@
+//used car
+{
+  "title":"Volks",
+  "fuel":"Diesel",
+  "price":1000,
+  "new": false,
+  "mileage":23,
+  "firstRegistration":"2012-03-04"
+}

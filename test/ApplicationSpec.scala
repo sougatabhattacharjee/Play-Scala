@@ -4,6 +4,7 @@ import org.junit.runner._
 
 import play.api.test._
 import play.api.test.Helpers._
+import play.test.WithApplication
 
 /**
  * Add your spec here.
@@ -20,7 +21,7 @@ class ApplicationSpec extends Specification {
     }
 
     "render the index page" in new WithApplication{
-      val home = route(FakeRequest(GET, "/")).get
+      val home = route(FakeRequest(GET, "/caradv")).get
 
       status(home) must equalTo(OK)
       contentType(home) must beSome.which(_ == "text/html")

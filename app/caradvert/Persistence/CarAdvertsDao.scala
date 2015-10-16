@@ -164,5 +164,10 @@ class CarAdvertsDao @Inject()(carAdvertsModelFormatter : CarAdvertsModelFormatte
   def toLocalDate(s: String): LocalDate =
     new SimpleDateFormat("yyyy-MM-dd").parse(s).toInstant().atZone(ZoneId.systemDefault()).toLocalDate;
 
+  override def clearTable(): Unit = {
+    DB.withConnection { conn =>
+      conn.prepareStatement("delete from CARADVERTS").execute()
+    }
+  }
 
 }

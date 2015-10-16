@@ -33,5 +33,5 @@ trait CarAdvertsDaoImpl {
 
   def modify(carAdvertsModel: CarAdvertsModel): CarAdvertsModel
 
-
+  def clearTable(): Unit
 }
